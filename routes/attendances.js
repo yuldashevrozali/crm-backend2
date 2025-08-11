@@ -1,83 +1,100 @@
-// routes/attendance.js
-const express = require("express");
+import express from 'express';
+import Attendance from '../models/Attendance.js';
+import Group from '../models/Course.js';
+
 const router = express.Router();
-const Attendance = require("../models/Attendance");
 
-// ✅ Davomat qo‘shish
-router.post("/", async (req, res) => {
+// Davomat saqlash
+router.post('/', async (req, res) => {
   try {
-    const { courseId, studentId, date, status } = req.body;
+    const { date, groupId, students, createdBy } = req.body;
 
-    const newAttendance = new Attendance({
-      courseId,
-      studentId,
-      date,
-      status,
+    const selectedDate = new Date(date);
+    selectedDate.setHours(0, 0, 0, 0);
+
+    const group = await Group.findById(groupId);
+    if (!group) {
+      return res.status(404).json({ message: "Guruh topilmadi" });
+    }
+
+    const todayWeekday = selectedDate
+      .toLocaleDateString('en-US', { weekday: 'long' })
+      .toLowerCase();
+
+    const now = new Date();
+    const todayTime = `${String(now.getHours()).padStart(2, '0')}:${String(
+      now.getMinutes()
+    ).padStart(2, '0')}`;
+
+    // 1️⃣ Agar schedule ichida bugun dars bo'lmasa
+    if (!group.weekDays.includes(todayWeekday)) {
+      return res.status(400).json({ message: "Bugun bu guruh uchun dars yo'q" });
+    }
+
+    // 2️⃣ Agar lesson_time bo'lsa — faqat shu vaqt ichida
+    if (group.lesson_time) {
+      const [start, end] = group.lesson_time.split('-'); // Masalan: "14:00-16:00"
+      if (!(todayTime >= start && todayTime <= end)) {
+        return res
+          .status(400)
+          .json({ message: "Davomat faqat dars vaqtida qilinadi" });
+      }
+    } else {
+      // lesson_time yo'q bo'lsa — shu kunda faqat bir marta
+      const existing = await Attendance.findOne({
+        groupId,
+        date: selectedDate
+      });
+      if (existing) {
+        return res
+          .status(400)
+          .json({ message: "Bu kun uchun davomat allaqachon saqlangan" });
+      }
+    }
+
+    // Davomat saqlash yoki yangilash
+    let attendance = await Attendance.findOne({
+      groupId,
+      date: selectedDate
     });
 
-    await newAttendance.save();
-    res.status(201).json(newAttendance);
+    if (attendance) {
+      if (group.lesson_time) {
+        attendance.students = students;
+        await attendance.save();
+        return res.json({ message: "Davomat yangilandi", attendance });
+      }
+      return res
+        .status(400)
+        .json({ message: "Bu kun uchun davomat allaqachon saqlangan" });
+    }
+
+    // Yangi yozuv
+    attendance = new Attendance({
+      date: selectedDate,
+      groupId,
+      students,
+      createdBy
+    });
+    await attendance.save();
+
+    res.json({ message: "Davomat saqlandi", attendance });
   } catch (err) {
-    res.status(400).json({ error: err.message });
+    console.error(err);
+    res.status(500).json({ message: "Server xatosi" });
   }
 });
 
-// ✅ Barcha davomat yozuvlarini olish (filtrlash bilan)
-router.get("/", async (req, res) => {
+// Davomatlarni olish
+router.get('/', async (req, res) => {
   try {
-    const filter = {};
-    if (req.query.courseId) filter.courseId = req.query.courseId;
-    if (req.query.studentId) filter.studentId = req.query.studentId;
-    if (req.query.date) filter.date = req.query.date;
-
-    const attendance = await Attendance.find(filter)
-      .populate("courseId")
-      .populate("studentId");
-
-    res.json(attendance);
+    const attendances = await Attendance.find()
+      .populate('groupId')
+      .populate('students.studentId');
+    res.json(attendances);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ message: "Server xatosi" });
   }
 });
 
-// ✅ Bitta davomat yozuvini olish
-router.get("/:id", async (req, res) => {
-  try {
-    const attendance = await Attendance.findById(req.params.id)
-      .populate("courseId")
-      .populate("studentId");
-
-    if (!attendance) return res.status(404).json({ error: "Topilmadi" });
-    res.json(attendance);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// ✅ Davomat yozuvini yangilash
-router.put("/:id", async (req, res) => {
-  try {
-    const updated = await Attendance.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { new: true }
-    );
-    if (!updated) return res.status(404).json({ error: "Topilmadi" });
-    res.json(updated);
-  } catch (err) {
-    res.status(400).json({ error: err.message });
-  }
-});
-
-// ✅ Davomat yozuvini o‘chirish
-router.delete("/:id", async (req, res) => {
-  try {
-    const deleted = await Attendance.findByIdAndDelete(req.params.id);
-    if (!deleted) return res.status(404).json({ error: "Topilmadi" });
-    res.json({ message: "O‘chirildi" });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-module.exports = router;
+export default router;

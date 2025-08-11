@@ -61,6 +61,22 @@ router.delete("/:id", async (req, res) => {
   }
 });
 
+// PUT /api/courses/:id/add-student
+router.put('/:id/add-student', async (req, res) => {
+  try {
+    const { studentId } = req.body;
+    const course = await Course.findByIdAndUpdate(
+      req.params.id,
+      { $addToSet: { studentIds: studentId } }, // takrorlanmasin
+      { new: true }
+    );
+    res.json(course);
+  } catch (err) {
+    res.status(500).json({ message: 'Server xatosi', error: err.message });
+  }
+});
+
+
 // ✅ Parolni yangilash
 router.put("/:id/password", async (req, res) => {
   try {
