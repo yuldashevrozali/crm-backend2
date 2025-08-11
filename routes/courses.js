@@ -89,9 +89,6 @@ router.put("/:id", async (req, res) => {
       studentIds,
     } = req.body;
 
-    if (!weekDays || !weekDays.length) {
-      return res.status(400).json({ message: "O‘quv kunlari majburiy" });
-    }
 
     const course = await Course.findByIdAndUpdate(
       req.params.id,
