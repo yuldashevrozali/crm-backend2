@@ -47,9 +47,9 @@ router.post("/", async (req, res) => {
     const { name, description, price, teacherId, startDate, weekDays } = req.body;
 
     if (!name || !price || !teacherId || !weekDays || !weekDays.length) {
-      return res
-        .status(400)
-        .json({ message: "Kurs nomi, narxi, o‘qituvchi ID va o‘quv kunlari majburiy" });
+      return res.status(400).json({
+        message: "Kurs nomi, narxi, o‘qituvchi ID va o‘quv kunlari majburiy",
+      });
     }
 
     const teacher = await Teacher.findById(teacherId);
@@ -64,6 +64,7 @@ router.post("/", async (req, res) => {
       teacherId,
       startDate,
       weekDays,
+      studentIds: [],
     });
 
     await course.save();
@@ -74,11 +75,19 @@ router.post("/", async (req, res) => {
 });
 
 /**
- * 📌 Kursni yangilash
+ * 📌 Kursni yangilash (to‘liq)
  */
 router.put("/:id", async (req, res) => {
   try {
-    const { name, description, price, teacherId, startDate, weekDays } = req.body;
+    const {
+      name,
+      description,
+      price,
+      teacherId,
+      startDate,
+      weekDays,
+      studentIds,
+    } = req.body;
 
     if (!weekDays || !weekDays.length) {
       return res.status(400).json({ message: "O‘quv kunlari majburiy" });
@@ -86,7 +95,15 @@ router.put("/:id", async (req, res) => {
 
     const course = await Course.findByIdAndUpdate(
       req.params.id,
-      { name, description, price, teacherId, startDate, weekDays },
+      {
+        name,
+        description,
+        price,
+        teacherId,
+        startDate,
+        weekDays,
+        studentIds, // studentIds ham yangilash mumkin
+      },
       { new: true }
     );
 
@@ -126,8 +143,11 @@ router.patch("/:id/assign-teacher", async (req, res) => {
     const course = await Course.findById(req.params.id);
     if (!course) return res.status(404).json({ message: "Kurs topilmadi" });
 
-    if (course.teacherId)
-      return res.status(400).json({ message: "Kursda allaqachon o‘qituvchi bor" });
+    if (course.teacherId) {
+      return res
+        .status(400)
+        .json({ message: "Kursda allaqachon o‘qituvchi bor" });
+    }
 
     course.teacherId = teacherId;
     await course.save();
@@ -143,14 +163,22 @@ router.patch("/:id/assign-teacher", async (req, res) => {
 router.patch("/:id/add-student", async (req, res) => {
   try {
     const { studentId } = req.body;
+
     const course = await Course.findById(req.params.id);
     if (!course) return res.status(404).json({ message: "Kurs topilmadi" });
 
-    if (course.studentIds.includes(studentId))
-      return res.status(400).json({ message: "O‘quvchi allaqachon kursda bor" });
+    const student = await Student.findById(studentId);
+    if (!student) return res.status(404).json({ message: "O‘quvchi topilmadi" });
+
+    if (course.studentIds.includes(studentId)) {
+      return res
+        .status(400)
+        .json({ message: "O‘quvchi allaqachon kursda bor" });
+    }
 
     course.studentIds.push(studentId);
     await course.save();
+
     res.json(course);
   } catch (error) {
     res.status(500).json({ message: "Server xatosi", error: error.message });
