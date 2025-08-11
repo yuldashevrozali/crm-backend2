@@ -46,7 +46,7 @@ router.post("/", async (req, res) => {
   try {
     const { name, description, price, teacherId, startDate, weekDays } = req.body;
 
-    if (!name || !price || !teacherId || !weekDays || !weekDays.length) {
+    if (!name || !price || !teacherId) {
       return res.status(400).json({
         message: "Kurs nomi, narxi, o‘qituvchi ID va o‘quv kunlari majburiy",
       });
