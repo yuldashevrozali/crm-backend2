@@ -5,7 +5,9 @@ import bcrypt from "bcryptjs";
 
 const router = express.Router();
 
-// ✅ Barcha studentlarni olish
+/**
+ * 📌 Barcha studentlarni olish
+ */
 router.get("/", async (req, res) => {
   try {
     const students = await Student.find().populate("courseId", "name");
@@ -15,30 +17,32 @@ router.get("/", async (req, res) => {
   }
 });
 
-// ✅ Yangi student qo‘shish
+/**
+ * 📌 Yangi student qo‘shish
+ */
 router.post("/", async (req, res) => {
   try {
     const { firstName, lastName, email, password, phone, courseId, paymentStatus } = req.body;
 
-    // Majburiy maydonlarni tekshirish
     if (!firstName || !lastName || !email || !password || !phone || !courseId || !paymentStatus) {
       return res.status(400).json({ message: "Barcha maydonlar to‘ldirilishi shart" });
     }
 
-    // Kursni tekshirish
     const course = await Course.findById(courseId);
     if (!course) {
       return res.status(404).json({ message: "Kurs topilmadi" });
     }
 
+    const hashedPassword = await bcrypt.hash(password, 10);
+
     const student = new Student({
       firstName,
       lastName,
       email,
-      password,
+      password: hashedPassword,
       phone,
       courseId,
-      paymentStatus
+      paymentStatus,
     });
 
     await student.save();
@@ -48,7 +52,9 @@ router.post("/", async (req, res) => {
   }
 });
 
-// ✅ Studentni o‘chirish
+/**
+ * 📌 Studentni o‘chirish
+ */
 router.delete("/:id", async (req, res) => {
   try {
     const student = await Student.findByIdAndDelete(req.params.id);
@@ -61,9 +67,9 @@ router.delete("/:id", async (req, res) => {
   }
 });
 
-
-
-// ✅ Parolni yangilash
+/**
+ * 📌 Student parolini yangilash
+ */
 router.put("/:id/password", async (req, res) => {
   try {
     const { newPassword } = req.body;
