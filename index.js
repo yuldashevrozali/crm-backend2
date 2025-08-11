@@ -5,6 +5,7 @@ import dotenv from "dotenv";
 import studentsRouter from "./routes/students.js";
 import coursesRouter from "./routes/courses.js";
 import teachersRouter from "./routes/teachers.js";
+import attendancesRouter from "./routes/attendances.js";
 
 dotenv.config();
 
@@ -15,6 +16,7 @@ app.use(express.json());
 app.use("/api/students", studentsRouter);
 app.use("/api/courses", coursesRouter);
 app.use("/api/teachers", teachersRouter);
+app.use("/api/attendances", attendancesRouter);
 
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log("✅ MongoDB ulandi"))
