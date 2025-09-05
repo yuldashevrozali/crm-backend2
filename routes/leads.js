@@ -32,8 +32,7 @@ router.get("/", async (req, res) => {
       filter.$or = [
         { firstName: { $regex: search, $options: 'i' } },
         { lastName: { $regex: search, $options: 'i' } },
-        { phone: { $regex: search, $options: 'i' } },
-        { email: { $regex: search, $options: 'i' } }
+        { phone: { $regex: search, $options: 'i' } }
       ];
     }
 
@@ -146,7 +145,6 @@ router.post("/", async (req, res) => {
       firstName,
       lastName,
       phone,
-      email,
       interestedSubject,
       source,
       notes,
@@ -171,15 +169,6 @@ router.post("/", async (req, res) => {
       });
     }
 
-    // Email mavjudligini tekshirish (agar berilgan bo'lsa)
-    if (email) {
-      const existingEmailLead = await Lead.findOne({ email });
-      if (existingEmailLead) {
-        return res.status(400).json({ 
-          message: "Bu email bilan lead allaqachon mavjud" 
-        });
-      }
-    }
 
     // AssignedTo teacher mavjudligini tekshirish
     if (assignedTo) {
@@ -201,7 +190,6 @@ router.post("/", async (req, res) => {
       firstName,
       lastName,
       phone,
-      email,
       interestedSubject,
       source: source || "other",
       notes: notes || "",
@@ -236,7 +224,6 @@ router.put("/:id", async (req, res) => {
       firstName,
       lastName,
       phone,
-      email,
       interestedSubject,
       status,
       source,
@@ -263,15 +250,6 @@ router.put("/:id", async (req, res) => {
       }
     }
 
-    // Email boshqa leadda mavjudligini tekshirish
-    if (email && email !== lead.email) {
-      const existingEmailLead = await Lead.findOne({ email, _id: { $ne: req.params.id } });
-      if (existingEmailLead) {
-        return res.status(400).json({ 
-          message: "Bu email bilan boshqa lead mavjud" 
-        });
-      }
-    }
 
     // AssignedTo teacher mavjudligini tekshirish
     if (assignedTo) {
@@ -298,7 +276,6 @@ router.put("/:id", async (req, res) => {
     if (firstName) lead.firstName = firstName;
     if (lastName) lead.lastName = lastName;
     if (phone) lead.phone = phone;
-    if (email !== undefined) lead.email = email;
     if (interestedSubject) lead.interestedSubject = interestedSubject;
     if (status) lead.status = status;
     if (source) lead.source = source;
@@ -404,18 +381,13 @@ router.post("/:id/convert", async (req, res) => {
       return res.status(404).json({ message: "Kurs topilmadi" });
     }
 
-    // Email mavjudligini tekshirish
-    if (!lead.email) {
-      return res.status(400).json({ 
-        message: "Leadda email bo'lishi kerak" 
-      });
-    }
-
-    // Student yaratish
+    // Student yaratish - email uchun phone dan foydalanish
+    const studentEmail = `${lead.phone.replace(/[^0-9]/g, '')}@student.temp`;
+    
     const student = new Student({
       firstName: lead.firstName,
       lastName: lead.lastName,
-      email: lead.email,
+      email: studentEmail,
       password: password,
       phone: lead.phone,
       courseId: courseId,

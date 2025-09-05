@@ -21,7 +21,8 @@ const app = express();
 app.use(cors({
   origin: [
     "http://localhost:3000",
-    "https://crm-new-gamma-one.vercel.app"
+    "https://crm-new-gamma-one.vercel.app",
+    "http://localhost:3001"
   ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],

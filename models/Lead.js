@@ -17,12 +17,6 @@ const leadSchema = new mongoose.Schema(
       required: true,
       trim: true
     },
-    email: { 
-      type: String, 
-      required: false,
-      trim: true,
-      lowercase: true
-    },
     interestedSubject: { 
       type: String, 
       required: true,
@@ -87,7 +81,6 @@ const leadSchema = new mongoose.Schema(
 
 // Index for better search performance
 leadSchema.index({ phone: 1 });
-leadSchema.index({ email: 1 });
 leadSchema.index({ status: 1 });
 leadSchema.index({ interestedSubject: 1 });
 
