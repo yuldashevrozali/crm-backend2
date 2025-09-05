@@ -95,4 +95,130 @@ router.put("/:id/password", async (req, res) => {
   }
 });
 
+/**
+ * 📌 Student payment statusini yangilash
+ */
+router.put("/:id/payment-status", async (req, res) => {
+  try {
+    const { paymentStatus } = req.body;
+    
+    if (!paymentStatus) {
+      return res.status(400).json({ message: "Payment status talab qilinadi" });
+    }
+
+    // Valid payment status qiymatlarini tekshirish
+    const validStatuses = ["paid", "not_paid"];
+    if (!validStatuses.includes(paymentStatus)) {
+      return res.status(400).json({
+        message: `Payment status quyidagilardan biri bo'lishi kerak: ${validStatuses.join(", ")}`
+      });
+    }
+
+    const student = await Student.findByIdAndUpdate(
+      req.params.id,
+      { paymentStatus },
+      { new: true }
+    ).populate("courseId", "name price");
+
+    if (!student) {
+      return res.status(404).json({ message: "O'quvchi topilmadi" });
+    }
+
+    res.json({
+      message: `Student payment statusi "${paymentStatus}" ga o'zgartirildi`,
+      student: {
+        id: student._id,
+        firstName: student.firstName,
+        lastName: student.lastName,
+        email: student.email,
+        phone: student.phone,
+        paymentStatus: student.paymentStatus,
+        course: student.courseId,
+        updatedAt: student.updatedAt
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ message: "Server xatosi", error: err.message });
+  }
+});
+
+/**
+ * 📌 Bitta studentni ID bo'yicha olish
+ */
+router.get("/:id", async (req, res) => {
+  try {
+    const student = await Student.findById(req.params.id)
+      .populate("courseId", "name price duration");
+
+    if (!student) {
+      return res.status(404).json({ message: "O'quvchi topilmadi" });
+    }
+
+    res.json(student);
+  } catch (err) {
+    res.status(500).json({ message: "Server xatosi", error: err.message });
+  }
+});
+
+/**
+ * 📌 Studentni to'liq yangilash
+ */
+router.put("/:id", async (req, res) => {
+  try {
+    const {
+      firstName,
+      lastName,
+      email,
+      phone,
+      courseId,
+      status,
+      paymentStatus
+    } = req.body;
+
+    // Email unique ekanligini tekshirish
+    if (email) {
+      const existingStudent = await Student.findOne({
+        email,
+        _id: { $ne: req.params.id }
+      });
+      if (existingStudent) {
+        return res.status(400).json({ message: "Bu email bilan boshqa student mavjud" });
+      }
+    }
+
+    // Course mavjudligini tekshirish
+    if (courseId) {
+      const course = await Course.findById(courseId);
+      if (!course) {
+        return res.status(404).json({ message: "Kurs topilmadi" });
+      }
+    }
+
+    const student = await Student.findByIdAndUpdate(
+      req.params.id,
+      {
+        firstName,
+        lastName,
+        email,
+        phone,
+        courseId,
+        status,
+        paymentStatus
+      },
+      { new: true }
+    ).populate("courseId", "name price");
+
+    if (!student) {
+      return res.status(404).json({ message: "O'quvchi topilmadi" });
+    }
+
+    res.json({
+      message: "Student ma'lumotlari yangilandi",
+      student
+    });
+  } catch (err) {
+    res.status(500).json({ message: "Server xatosi", error: err.message });
+  }
+});
+
 export default router;
