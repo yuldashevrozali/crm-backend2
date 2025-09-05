@@ -11,6 +11,7 @@ import teachersRouter from "./routes/teachers.js";
 import attendancesRouter from "./routes/attendances.js"; // nomini to'g'ri qo'ying
 import paymentsRouter from './routes/payments.js';
 import testsRouter from './routes/tests.js';
+import leadsRouter from './routes/leads.js';
 
 dotenv.config();
 
@@ -30,12 +31,15 @@ app.use("/api/teachers", teachersRouter);
 app.use("/api/attendances", attendancesRouter);
 app.use('/api/payments', paymentsRouter);
 app.use('/api/tests', testsRouter);
+app.use('/api/leads', leadsRouter);
 
 // Test route
 app.get("/", (req, res) => {
   res.send(`
     <h1>🚀 Backend ishlayapti!</h1>
     <p><strong>Attendances:</strong> <a href="/api/attendances">/api/attendances</a></p>
+    <p><strong>Leads:</strong> <a href="/api/leads">/api/leads</a></p>
+    <p><strong>Leads Stats:</strong> <a href="/api/leads/stats/overview">/api/leads/stats/overview</a></p>
   `);
 });
 
