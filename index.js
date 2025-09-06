@@ -24,7 +24,9 @@ app.use(cors({
   origin: [
     "http://localhost:3000",
     "https://crm-new-gamma-one.vercel.app",
-    "http://localhost:3001"
+    "http://localhost:3001",
+    "http://localhost:8082",
+    "http://localhost:8081"
   ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
